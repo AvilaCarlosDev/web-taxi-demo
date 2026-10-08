@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react'
+import { MenuMovil, SaltarAlContenido, WhatsAppFlotante } from './sitio.jsx'
+import { useSeccionActiva, wa } from './navegacion.js'
 
-const WHATSAPP_URL = 'https://wa.me/584120000000'
+const enlaces = [
+  ['servicios', 'Servicios'],
+  ['tarifas', 'Tarifas'],
+  ['conductores', 'Conductores'],
+  ['empresas', 'Empresas'],
+]
+
+// Factor sobre la tarifa de Auto de cada zona.
+const factor = { Moto: 0.6, Auto: 1, Confort: 1.6 }
 
 const rideTypes = [
   {
@@ -94,41 +104,91 @@ const stats = [
 function App() {
   const [activeRide, setActiveRide] = useState('Auto')
   const selectedRide = useMemo(() => rideTypes.find((ride) => ride.name === activeRide) || rideTypes[1], [activeRide])
+  const [origen, setOrigen] = useState('')
+  const [destino, setDestino] = useState('')
+  const [incompleto, setIncompleto] = useState(false)
+  const activa = useSeccionActiva(enlaces.map(([id]) => id))
+
+  const zona = zones.find(([nombre]) => nombre.toLowerCase() === destino.trim().toLowerCase())
+  const estimado = zona ? `$${(Number(zona[1].slice(1)) * factor[activeRide]).toFixed(2).replace(/\.00$/, '')}` : null
+
+  const mensajeViaje = [
+    `Hola, quiero pedir un viaje en ${activeRide}.`,
+    origen.trim() && `Origen: ${origen.trim()}`,
+    destino.trim() && `Destino: ${destino.trim()}`,
+    estimado && `Tarifa estimada: ${estimado}`,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  const solicitar = (event) => {
+    if (!origen.trim() || !destino.trim()) {
+      event.preventDefault()
+      setIncompleto(true)
+      document.getElementById(origen.trim() ? 'viaje-destino' : 'viaje-origen')?.focus()
+    }
+  }
+
+  const irAlCotizador = (cambios) => {
+    if (cambios.ride) setActiveRide(cambios.ride)
+    if (cambios.destino) setDestino(cambios.destino)
+    document.getElementById('cotizador')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   return (
     <div className="min-h-screen bg-[#f6f1e7] text-zinc-950 antialiased">
-      <div className="bg-zinc-950 text-xs font-black uppercase tracking-[0.18em] text-amber-200/80">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-5 py-3 md:justify-between">
+      <SaltarAlContenido className="focus:rounded-full focus:bg-zinc-950 focus:text-white" />
+      <div className="bg-zinc-950 text-[11px] font-black uppercase tracking-[0.18em] text-amber-200/80">
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-x-8 px-5 py-2.5 md:justify-between">
           <span>Transporte 24/7 en Punto Fijo</span>
-          <span>Conductores verificados</span>
-          <span>Reservas por WhatsApp</span>
+          <span className="hidden md:inline">Conductores verificados</span>
+          <span className="hidden md:inline">Reservas por WhatsApp</span>
         </div>
       </div>
 
       <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f6f1e7]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center gap-4 px-5 lg:px-8">
-          <a href="#inicio" className="flex items-center gap-3" aria-label="RutaFija Black inicio">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-lg font-black text-amber-300 shadow-xl shadow-black/10">RF</span>
+          <a href="#inicio" className="flex shrink-0 items-center gap-3" aria-label="RutaFija Black inicio">
+            <span className="grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-2xl bg-zinc-950 text-lg font-black text-amber-300 shadow-xl shadow-black/10">RF</span>
             <span>
-              <span className="block text-xl font-black tracking-tight">RutaFija Black</span>
+              <span className="block font-[family-name:var(--font-display)] text-xl font-bold tracking-tight">RutaFija Black</span>
               <span className="block text-xs font-black uppercase tracking-[0.18em] text-zinc-500">Taxi & transfer</span>
             </span>
           </a>
 
-          <nav className="ml-auto hidden items-center gap-7 text-sm font-black text-zinc-600 lg:flex">
-            <a href="#servicios" className="transition hover:text-zinc-950">Servicios</a>
-            <a href="#tarifas" className="transition hover:text-zinc-950">Tarifas</a>
-            <a href="#conductores" className="transition hover:text-zinc-950">Conductores</a>
-            <a href="#empresas" className="transition hover:text-zinc-950">Empresas</a>
+          <nav aria-label="Principal" className="ml-auto hidden items-center gap-2 text-sm font-black text-zinc-600 lg:flex">
+            {enlaces.map(([id, texto]) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                aria-current={activa === id ? 'true' : undefined}
+                className={`rounded-full px-4 py-2 transition hover:text-zinc-950 ${activa === id ? 'bg-amber-300 text-zinc-950' : ''}`}
+              >
+                {texto}
+              </a>
+            ))}
           </nav>
 
-          <a href={WHATSAPP_URL} className="ml-auto rounded-full bg-zinc-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-black/10 transition hover:bg-amber-400 hover:text-zinc-950 lg:ml-0">
+          <a href="#cotizador" className="ml-auto hidden rounded-full bg-zinc-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-black/10 transition hover:bg-amber-400 hover:text-zinc-950 active:scale-[.98] sm:inline-flex lg:ml-0">
             Pedir taxi
           </a>
+          <div className="ml-auto sm:ml-0">
+            <MenuMovil
+              enlaces={enlaces}
+              activa={activa}
+              cta={{ href: '#cotizador', texto: 'Pedir taxi' }}
+              tono={{
+                boton: 'rounded-full border border-zinc-300 bg-white text-zinc-950',
+                panel: 'border-black/5 bg-[#f6f1e7] text-zinc-950',
+                activo: 'text-amber-700',
+                cta: 'rounded-full bg-zinc-950 text-white',
+              }}
+            />
+          </div>
         </div>
       </header>
 
-      <main>
+      <main id="contenido">
         <section id="inicio" className="relative isolate overflow-hidden bg-zinc-950 text-white">
           <img
             src="/img/foto-1490650404312a.jpg"
@@ -139,16 +199,16 @@ function App() {
           <div className="mx-auto grid min-h-[740px] max-w-7xl items-center gap-12 px-5 py-16 lg:grid-cols-[1.05fr_.95fr] lg:px-8">
             <div className="max-w-3xl pt-8">
               <div className="mb-7 inline-flex rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-amber-200 backdrop-blur">
-                Servicio demo premium · Punto Fijo
+                Taxi ejecutivo · Punto Fijo
               </div>
-              <h1 className="text-balance text-5xl font-black leading-[0.92] tracking-[-0.06em] sm:text-6xl lg:text-7xl">
+              <h1 className="text-5xl font-bold leading-[0.95] tracking-[-0.035em] sm:text-6xl lg:text-7xl">
                 Transporte confiable con experiencia ejecutiva
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-white/68 sm:text-xl">
                 Taxis urbanos, motos rápidas, traslados al aeropuerto y rutas corporativas con conductores verificados, tarifas claras y atención directa por WhatsApp.
               </p>
               <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                <a href={WHATSAPP_URL} className="inline-flex items-center justify-center rounded-full bg-amber-300 px-8 py-4 text-base font-black text-zinc-950 shadow-2xl shadow-amber-400/20 transition hover:-translate-y-0.5 hover:bg-white">
+                <a href="#cotizador" className="inline-flex items-center justify-center rounded-full bg-amber-300 px-8 py-4 text-base font-black text-zinc-950 shadow-2xl shadow-amber-400/20 transition hover:-translate-y-0.5 hover:bg-white">
                   Reservar ahora
                 </a>
                 <a href="#tarifas" className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-8 py-4 text-base font-black text-white backdrop-blur transition hover:bg-white/15">
@@ -159,38 +219,48 @@ function App() {
               <div className="mt-12 grid max-w-xl grid-cols-3 overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 backdrop-blur-xl">
                 {stats.map(([value, label]) => (
                   <div key={label} className="border-r border-white/10 p-5 last:border-r-0">
-                    <strong className="block text-2xl font-black">{value}</strong>
+                    <strong className="tabular block font-[family-name:var(--font-display)] text-2xl font-bold">{value}</strong>
                     <span className="text-[11px] font-black uppercase tracking-wide text-white/45">{label}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="relative rounded-[2.25rem] border border-white/10 bg-white/10 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl">
+            <div id="cotizador" className="relative scroll-mt-28 rounded-[2.25rem] border border-white/10 bg-white/10 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl">
               <div className="rounded-[1.75rem] bg-[#f6f1e7] p-5 text-zinc-950">
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">Cotizador rápido</p>
                     <h2 className="mt-1 text-2xl font-black tracking-tight">¿A dónde vamos?</h2>
                   </div>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">4 min</span>
+                  <span className="tabular shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">llega en {selectedRide.time}</span>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3">
-                    <span className="h-3 w-3 rounded-full bg-amber-400" />
-                    <input className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-zinc-400" placeholder="Origen: Av. Jacinto Lara" />
+                  <label className={`flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 transition focus-within:border-zinc-950 ${incompleto && !origen.trim() ? 'border-red-500' : 'border-zinc-200'}`}>
+                    <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full bg-amber-400" />
+                    <span className="sr-only">Origen</span>
+                    <input id="viaje-origen" value={origen} onChange={(event) => setOrigen(event.target.value)} aria-invalid={incompleto && !origen.trim()} className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-zinc-400" placeholder="Origen: Av. Jacinto Lara" />
                   </label>
-                  <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3">
-                    <span className="h-3 w-3 rounded-full bg-zinc-950" />
-                    <input className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-zinc-400" placeholder="Destino: Aeropuerto Las Piedras" />
+                  <label className={`flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 transition focus-within:border-zinc-950 ${incompleto && !destino.trim() ? 'border-red-500' : 'border-zinc-200'}`}>
+                    <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full bg-zinc-950" />
+                    <span className="sr-only">Destino</span>
+                    <input id="viaje-destino" list="zonas-frecuentes" value={destino} onChange={(event) => setDestino(event.target.value)} aria-invalid={incompleto && !destino.trim()} className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-zinc-400" placeholder="Destino: Aeropuerto Las Piedras" />
+                    <datalist id="zonas-frecuentes">
+                      {zones.map(([nombre]) => <option key={nombre} value={nombre} />)}
+                    </datalist>
                   </label>
+                  {incompleto && (!origen.trim() || !destino.trim()) && (
+                    <p role="alert" className="px-1 text-xs font-bold text-red-600">Escribe {!origen.trim() ? 'desde dónde sales' : 'a dónde vas'} para enviarte la tarifa.</p>
+                  )}
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-2">
                   {rideTypes.map((ride) => (
                     <button
                       key={ride.name}
+                      type="button"
+                      aria-pressed={activeRide === ride.name}
                       onClick={() => setActiveRide(ride.name)}
                       className={`rounded-2xl border p-3 text-left transition ${activeRide === ride.name ? 'border-zinc-950 bg-zinc-950 text-white' : 'border-zinc-200 bg-white hover:border-amber-400'}`}
                     >
@@ -208,9 +278,12 @@ function App() {
                         <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-400">{selectedRide.tagline}</p>
                         <h3 className="mt-1 text-2xl font-black">{selectedRide.name}</h3>
                       </div>
-                      <strong className="text-2xl font-black">{selectedRide.price}</strong>
+                      <div className="text-right">
+                        <strong className="tabular block text-2xl font-black">{estimado ?? selectedRide.price}</strong>
+                        <span className="text-[11px] font-bold text-zinc-400">{estimado ? `hasta ${zona[0]}` : 'elige un destino frecuente'}</span>
+                      </div>
                     </div>
-                    <a href={WHATSAPP_URL} className="mt-5 inline-flex w-full justify-center rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-zinc-950 transition hover:bg-zinc-950 hover:text-white">
+                    <a href={wa(mensajeViaje)} onClick={solicitar} className="mt-5 inline-flex w-full justify-center rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-zinc-950 transition hover:bg-zinc-950 hover:text-white active:scale-[.98]">
                       Solicitar por WhatsApp
                     </a>
                   </div>
@@ -225,14 +298,14 @@ function App() {
             <div className="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">Servicios principales</p>
-                <h2 className="mt-3 max-w-3xl text-4xl font-black tracking-tight sm:text-5xl">Una landing que parece lista para vender transporte real</h2>
+                <h2 className="mt-3 max-w-3xl text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Un servicio para cada traslado</h2>
               </div>
-              <p className="max-w-md text-base leading-7 text-zinc-600">Información ficticia, pero estructurada como producto final para un cliente de movilidad local.</p>
+              <p className="max-w-md text-base leading-7 text-zinc-600">Del viaje corto al centro al traslado de madrugada al aeropuerto: mismo número, mismo trato.</p>
             </div>
             <div className="grid gap-5 md:grid-cols-4">
               {services.map((service) => (
                 <article key={service.title} className="rounded-[1.75rem] border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/10">
-                  <span className="mb-7 grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-xl font-black text-amber-300">{service.icon}</span>
+                  <span aria-hidden="true" className="mb-7 grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-xl font-black text-amber-300">{service.icon}</span>
                   <h3 className="text-xl font-black tracking-tight">{service.title}</h3>
                   <p className="mt-3 text-sm leading-6 text-zinc-500">{service.desc}</p>
                 </article>
@@ -245,28 +318,28 @@ function App() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="mb-12 text-center">
               <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">Opciones y tarifas</p>
-              <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Elige cómo moverte</h2>
+              <h2 className="mt-3 text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Elige cómo moverte</h2>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
               {rideTypes.map((ride) => (
-                <article key={ride.name} className={`relative overflow-hidden rounded-[2rem] border bg-white shadow-sm ${ride.featured ? 'border-zinc-950 shadow-2xl shadow-black/10' : 'border-zinc-200'}`}>
+                <article key={ride.name} className={`relative flex flex-col overflow-hidden rounded-[2rem] border bg-white shadow-sm ${ride.featured ? 'border-zinc-950 shadow-2xl shadow-black/10' : 'border-zinc-200'}`}>
                   {ride.featured && <span className="absolute left-5 top-5 z-10 rounded-full bg-amber-300 px-4 py-2 text-xs font-black uppercase tracking-wide text-zinc-950">Más solicitado</span>}
                   <img src={ride.image} alt={ride.name} className="h-56 w-full object-cover" />
-                  <div className="p-6">
+                  <div className="flex flex-1 flex-col p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-400">{ride.tagline}</p>
-                        <h3 className="mt-1 text-3xl font-black">{ride.name}</h3>
+                        <h3 className="mt-1 text-3xl font-bold">{ride.name}</h3>
                       </div>
-                      <strong className="text-2xl font-black">{ride.price}</strong>
+                      <strong className="tabular text-2xl font-black">{ride.price}</strong>
                     </div>
-                    <ul className="mt-6 space-y-3 text-sm font-semibold text-zinc-600">
+                    <ul className="mt-6 mb-7 space-y-3 text-sm font-semibold text-zinc-600">
                       {ride.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
                     </ul>
-                    <a href={WHATSAPP_URL} className="mt-7 inline-flex w-full justify-center rounded-full bg-zinc-950 px-5 py-3 text-sm font-black text-white transition hover:bg-amber-300 hover:text-zinc-950">
+                    <button type="button" onClick={() => irAlCotizador({ ride: ride.name })} className="mt-auto inline-flex w-full justify-center rounded-full bg-zinc-950 px-5 py-3 text-sm font-black text-white transition hover:bg-amber-300 hover:text-zinc-950 active:scale-[.98]">
                       Elegir {ride.name}
-                    </a>
+                    </button>
                   </div>
                 </article>
               ))}
@@ -277,14 +350,17 @@ function App() {
                 <div className="p-8 lg:p-10">
                   <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">Tarifas referenciales</p>
                   <h3 className="mt-3 text-3xl font-black tracking-tight">Rutas frecuentes</h3>
-                  <p className="mt-4 text-sm leading-6 text-zinc-600">Precios ficticios para demo. En un cliente real se conectan a WhatsApp, CRM o calculadora dinámica.</p>
+                  <p className="mt-4 text-sm leading-6 text-zinc-600">Tarifa de Auto desde el centro. Toca una ruta y la llevamos al cotizador con el precio de Moto o Confort.</p>
                 </div>
                 <div className="divide-y divide-zinc-200 bg-white">
                   {zones.map(([zone, price]) => (
-                    <div key={zone} className="flex items-center justify-between gap-4 px-6 py-4">
+                    <button type="button" key={zone} onClick={() => irAlCotizador({ destino: zone })} className="group flex w-full items-center justify-between gap-4 px-6 py-4 text-left transition hover:bg-amber-50">
                       <span className="font-bold text-zinc-700">{zone}</span>
-                      <strong className="text-xl font-black">{price}</strong>
-                    </div>
+                      <span className="flex items-center gap-3">
+                        <strong className="tabular text-xl font-black">{price}</strong>
+                        <span aria-hidden="true" className="text-zinc-300 transition group-hover:translate-x-1 group-hover:text-amber-600">→</span>
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -297,9 +373,9 @@ function App() {
             <div className="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">Equipo verificado</p>
-                <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Conductores que generan confianza</h2>
+                <h2 className="mt-3 text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Conductores que generan confianza</h2>
               </div>
-              <a href={WHATSAPP_URL} className="inline-flex w-fit rounded-full border border-zinc-300 px-6 py-3 text-sm font-black text-zinc-800 transition hover:border-zinc-950 hover:bg-zinc-950 hover:text-white">
+              <a href={wa('Hola, quiero trabajar como conductor en RutaFija Black.')} className="inline-flex w-fit rounded-full border border-zinc-300 px-6 py-3 text-sm font-black text-zinc-800 transition hover:border-zinc-950 hover:bg-zinc-950 hover:text-white">
                 Unirme como conductor
               </a>
             </div>
@@ -315,7 +391,7 @@ function App() {
                       </div>
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-800">★ {driver.rating}</span>
                     </div>
-                    <p className="mt-5 text-sm font-semibold text-zinc-500">{driver.trips} completados con historial verificado.</p>
+                    <p className="mt-5 text-sm font-semibold text-zinc-500"><span className="tabular">{driver.trips}</span> completados con historial verificado.</p>
                   </div>
                 </article>
               ))}
@@ -327,15 +403,15 @@ function App() {
           <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.04] lg:grid-cols-[1fr_1fr]">
             <div className="p-8 sm:p-12 lg:p-16">
               <p className="text-sm font-black uppercase tracking-[0.24em] text-amber-200">Soluciones corporativas</p>
-              <h2 className="mt-4 max-w-2xl text-4xl font-black tracking-tight sm:text-5xl">Rutas para equipos, hoteles, clínicas y comercios</h2>
-              <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">Contratos mensuales ficticios para empresas que necesitan traslados recurrentes, reportes, facturación y prioridad de unidades.</p>
+              <h2 className="mt-4 max-w-2xl text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Rutas para equipos, hoteles, clínicas y comercios</h2>
+              <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">Contratos mensuales para empresas que necesitan traslados recurrentes, reporte de viajes, facturación y unidades con prioridad.</p>
               <div className="mt-9 grid gap-3 text-sm font-semibold text-white/70 sm:grid-cols-2">
                 <span>✓ Reporte semanal de viajes</span>
                 <span>✓ Conductores asignados</span>
                 <span>✓ Tarifas por zona</span>
                 <span>✓ Atención prioritaria</span>
               </div>
-              <a href={WHATSAPP_URL} className="mt-9 inline-flex rounded-full bg-amber-300 px-7 py-4 text-sm font-black text-zinc-950 transition hover:bg-white">
+              <a href={wa('Hola, quiero una propuesta de traslados para mi empresa.')} className="mt-9 inline-flex rounded-full bg-amber-300 px-7 py-4 text-sm font-black text-zinc-950 transition hover:bg-white">
                 Solicitar propuesta
               </a>
             </div>
@@ -354,10 +430,10 @@ function App() {
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-zinc-950 text-sm font-black text-amber-300">RF</span>
               <div>
                 <span className="block text-lg font-black">RutaFija Black</span>
-                <span className="text-xs font-semibold text-zinc-500">Taxi & transfer demo</span>
+                <span className="text-xs font-semibold text-zinc-500">Taxi & transfer</span>
               </div>
             </div>
-            <p className="mt-5 max-w-md text-sm leading-6 text-zinc-500">Landing ficticia para servicio de transporte con taxis, motos, confort, aeropuerto, empresas y encomiendas express.</p>
+            <p className="mt-5 max-w-md text-sm leading-6 text-zinc-500">Taxis, motos, unidades confort, traslados al aeropuerto, rutas de empresa y encomiendas express en Punto Fijo, a toda hora.</p>
           </div>
           <div>
             <h3 className="text-sm font-black uppercase tracking-wide">Servicios</h3>
@@ -372,16 +448,17 @@ function App() {
             <h3 className="text-sm font-black uppercase tracking-wide">Contacto</h3>
             <ul className="mt-5 space-y-3 text-sm font-semibold text-zinc-500">
               <li>Punto Fijo, Falcón</li>
-              <li><a href={WHATSAPP_URL} className="hover:text-zinc-950">WhatsApp: +58 412-000-0000</a></li>
+              <li><a href={wa()} className="hover:text-zinc-950">WhatsApp: +58 412-000-0000</a></li>
               <li>Atención 24/7</li>
             </ul>
           </div>
         </div>
         <div className="mx-auto mt-12 max-w-7xl border-t border-black/5 px-5 pt-7 text-center text-xs font-semibold text-zinc-400 lg:px-8">
           © 2026 RutaFija Black. Demo creada por Carlos Avila - Developer 🇻🇪 ·{' '}
-          <a href="/privacidad/" className="underline underline-offset-2 hover:text-white/60">Privacidad</a>
+          <a href="/privacidad/" className="underline underline-offset-2 hover:text-zinc-700">Privacidad</a>
         </div>
       </footer>
+      <WhatsAppFlotante texto="Hola, necesito un taxi." className="bg-amber-300 text-zinc-950" />
     </div>
   )
 }
