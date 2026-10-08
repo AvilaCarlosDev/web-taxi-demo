@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { MenuMovil, SaltarAlContenido, WhatsAppFlotante } from './sitio.jsx'
 import { useSeccionActiva, wa } from './navegacion.js'
+import { formatearCuenta, quietudActiva, useBandaScroll, useContador, useParallax, useRecorrido, useRevelados } from './motion.js'
 
 const enlaces = [
   ['servicios', 'Servicios'],
@@ -122,9 +123,10 @@ const drivers = [
 ]
 
 const stats = [
-  ['12k+', 'viajes completados'],
-  ['4.9★', 'valoración media'],
-  ['24/7', 'soporte activo'],
+  { valor: 12, sufijo: 'k+', etiqueta: 'viajes completados' },
+  { valor: 4.9, decimales: 1, sufijo: '★', etiqueta: 'valoración media' },
+  { valor: 6, sufijo: '', etiqueta: 'minutos de llegada' },
+  { valor: 480, sufijo: ' mil', etiqueta: 'km recorridos' },
 ]
 
 function LetreroTecho({ texto = 'TAXI', encendido = false, decorativo = false, className = '' }) {
@@ -159,8 +161,13 @@ function LetreroTecho({ texto = 'TAXI', encendido = false, decorativo = false, c
   )
 }
 
-function BandaDamero({ className = '', animada = true }) {
-  return <div aria-hidden="true" className={`damero ${animada ? 'damero-marquesina' : ''} border-y-2 border-zinc-950 ${className}`} />
+function BandaDamero({ className = '', animada = true, referencia }) {
+  return <div ref={referencia} aria-hidden="true" className={`damero ${animada ? 'damero-marquesina' : ''} border-y-2 border-zinc-950 ${className}`} />
+}
+
+function Contador({ valor, decimales = 0, sufijo = '' }) {
+  const [nodo, mostrado] = useContador(valor)
+  return <span ref={nodo}>{formatearCuenta(mostrado, decimales) + sufijo}</span>
 }
 
 function App() {
@@ -170,6 +177,14 @@ function App() {
   const [destino, setDestino] = useState('')
   const [incompleto, setIncompleto] = useState(false)
   const activa = useSeccionActiva(enlaces.map(([id]) => id))
+  const fotoHeroe = useRef(null)
+  const bandaDamero = useRef(null)
+  const tramoRuta = useRef(null)
+
+  useRevelados()
+  useParallax(fotoHeroe)
+  useBandaScroll(bandaDamero)
+  useRecorrido(tramoRuta)
 
   const zona = zones.find(([nombre]) => nombre.toLowerCase() === destino.trim().toLowerCase())
   const estimado = zona ? `$${(Number(zona[1].slice(1)) * factor[activeRide]).toFixed(2).replace(/\.00$/, '')}` : null
@@ -194,7 +209,7 @@ function App() {
   const irAlCotizador = (cambios) => {
     if (cambios.ride) setActiveRide(cambios.ride)
     if (cambios.destino) setDestino(cambios.destino)
-    document.getElementById('cotizador')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    document.getElementById('cotizador')?.scrollIntoView({ behavior: quietudActiva() ? 'auto' : 'smooth', block: 'center' })
   }
 
   return (
@@ -236,7 +251,7 @@ function App() {
             ))}
           </nav>
 
-          <a href="#cotizador" className="ml-auto hidden border-2 border-zinc-950 bg-zinc-950 px-5 py-3 font-mono text-xs font-bold uppercase tracking-[0.14em] text-amber-300 transition hover:bg-amber-300 hover:text-zinc-950 active:scale-[.98] sm:inline-flex lg:ml-0">
+          <a href="#cotizador" className="ml-auto hidden border-2 border-zinc-950 bg-zinc-950 px-5 py-3 font-mono text-xs font-bold uppercase tracking-[0.14em] text-amber-300 transition hover:-translate-y-0.5 hover:bg-amber-300 hover:text-zinc-950 active:scale-[.98] sm:inline-flex lg:ml-0">
             Pedir taxi
           </a>
           <div className="ml-auto sm:ml-0">
@@ -258,9 +273,10 @@ function App() {
       <main id="contenido">
         <section id="inicio" className="relative isolate overflow-hidden bg-zinc-950 text-white">
           <img
+            ref={fotoHeroe}
             src="/img/foto-1490650404312a.jpg"
             alt="Taxi circulando de noche por una avenida iluminada"
-            className="absolute inset-0 -z-30 h-full w-full object-cover opacity-30"
+            className="absolute inset-0 -z-30 h-full w-full object-cover opacity-30 will-change-transform"
           />
           <div aria-hidden="true" className="plano-calles absolute inset-0 -z-20 opacity-60" />
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_74%_14%,rgba(251,191,36,.3),transparent_28%),linear-gradient(115deg,#09090b_0%,rgba(9,9,11,.96)_46%,rgba(39,39,42,.5)_100%)]" />
@@ -278,25 +294,30 @@ function App() {
                 Taxis urbanos, motos rápidas, traslados al aeropuerto y rutas corporativas con conductores verificados, tarifas claras y atención directa por WhatsApp.
               </p>
               <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-                <a href="#cotizador" className="inline-flex items-center justify-center border-2 border-amber-300 bg-amber-300 px-8 py-4 font-mono text-sm font-bold uppercase tracking-[0.12em] text-zinc-950 shadow-[6px_6px_0_0_rgba(252,211,77,.32)] transition hover:-translate-y-0.5 hover:bg-white">
+                <a href="#cotizador" className="inline-flex items-center justify-center border-2 border-amber-300 bg-amber-300 px-8 py-4 font-mono text-sm font-bold uppercase tracking-[0.12em] text-zinc-950 shadow-[6px_6px_0_0_rgba(252,211,77,.32)] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[8px_9px_0_0_rgba(252,211,77,.45)]">
                   Cotizar mi viaje
                 </a>
-                <a href="#tarifas" className="inline-flex items-center justify-center border-2 border-white/30 px-8 py-4 font-mono text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:border-white hover:bg-white/10">
+                <a href="#tarifas" className="inline-flex items-center justify-center border-2 border-white/30 px-8 py-4 font-mono text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:-translate-y-0.5 hover:border-white hover:bg-white/10">
                   Ver tarifas
                 </a>
               </div>
 
-              <div className="mt-11 grid max-w-xl grid-cols-3 border-2 border-white/15 bg-black/55 backdrop-blur-xl">
-                {stats.map(([value, label]) => (
-                  <div key={label} className="border-r-2 border-white/10 p-5 last:border-r-0">
-                    <strong className="tabular block font-mono text-2xl font-bold text-amber-300">{value}</strong>
-                    <span className="mt-1 block font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/65">{label}</span>
+              <div data-reveal className="mt-11 grid max-w-xl grid-cols-2 border-2 border-white/15 bg-black/55 backdrop-blur-xl sm:grid-cols-4">
+                {stats.map((stat, indice) => (
+                  <div
+                    key={stat.etiqueta}
+                    className={`border-white/10 p-5 ${indice === stats.length - 1 ? '' : 'sm:border-r-2'} ${indice % 2 === 0 ? 'border-r-2' : ''} ${indice < 2 ? 'border-b-2 sm:border-b-0' : ''}`}
+                  >
+                    <strong className="tabular block font-mono text-2xl font-bold text-amber-300">
+                      <Contador valor={stat.valor} decimales={stat.decimales ?? 0} sufijo={stat.sufijo} />
+                    </strong>
+                    <span className="mt-1 block font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/65">{stat.etiqueta}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div id="cotizador" className="relative z-20 scroll-mt-28 border-2 border-zinc-700 bg-zinc-900 p-3 shadow-[10px_10px_0_0_rgba(0,0,0,.5)] lg:-mb-20">
+            <div id="cotizador" data-reveal className="relative z-20 scroll-mt-28 border-2 border-zinc-700 bg-zinc-900 p-3 shadow-[10px_10px_0_0_rgba(0,0,0,.5)] lg:-mb-20">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                 <span className="flex items-center gap-2">
                   <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -311,7 +332,9 @@ function App() {
                     {estimado ? 'Tarifa estimada' : 'Tarifa en espera'}
                   </span>
                   <span aria-live="polite" className="lcd tabular font-mono text-4xl font-bold text-amber-300 sm:text-5xl">
-                    {estimado ? estimado.replace('$', '') : '--,--'}
+                    <span key={estimado ?? 'espera'} className="lcd-parpadeo">
+                      {estimado ? estimado.replace('$', '') : '--,--'}
+                    </span>
                   </span>
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-amber-400/20 pt-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400/70">
@@ -355,7 +378,7 @@ function App() {
                       type="button"
                       aria-pressed={activeRide === ride.name}
                       onClick={() => setActiveRide(ride.name)}
-                      className={`border-2 p-3 text-left transition ${activeRide === ride.name ? 'border-zinc-950 bg-zinc-950 text-amber-300' : 'border-zinc-300 bg-white hover:border-amber-400'}`}
+                      className={`border-2 p-3 text-left transition ${activeRide === ride.name ? 'border-zinc-950 bg-zinc-950 text-amber-300' : 'border-zinc-300 bg-white hover:-translate-y-0.5 hover:border-amber-400'}`}
                     >
                       <span className="block font-mono text-sm font-bold uppercase tracking-wide">{ride.name}</span>
                       <span className="mt-1 block font-mono text-[11px] font-bold opacity-75">{ride.time}</span>
@@ -378,7 +401,7 @@ function App() {
                         <span className="font-mono text-[11px] font-bold text-zinc-600">{estimado ? `hasta ${zona[0]}` : 'elige un destino frecuente'}</span>
                       </div>
                     </div>
-                    <a href={wa(mensajeViaje)} onClick={solicitar} className="mt-5 inline-flex w-full justify-center border-2 border-zinc-950 bg-amber-300 px-5 py-3 font-mono text-sm font-bold uppercase tracking-wide text-zinc-950 transition hover:bg-zinc-950 hover:text-amber-300 active:scale-[.98]">
+                    <a href={wa(mensajeViaje)} onClick={solicitar} className="mt-5 inline-flex w-full justify-center border-2 border-zinc-950 bg-amber-300 px-5 py-3 font-mono text-sm font-bold uppercase tracking-wide text-zinc-950 transition hover:-translate-y-0.5 hover:bg-zinc-950 hover:text-amber-300 active:scale-[.98]">
                       Solicitar por WhatsApp
                     </a>
                   </div>
@@ -388,13 +411,13 @@ function App() {
           </div>
 
           <div className="mt-16 lg:mt-24">
-            <BandaDamero className="h-12 border-b-0" />
+            <BandaDamero referencia={bandaDamero} animada={false} className="h-12 border-b-0" />
           </div>
         </section>
 
         <section id="servicios" className="bg-taxi-cream py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <div data-reveal className="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <p className="font-mono text-xs font-bold uppercase tracking-[0.26em] text-amber-800">Tablero de servicios</p>
                 <h2 className="mt-3 max-w-3xl text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Un servicio para cada traslado</h2>
@@ -402,8 +425,8 @@ function App() {
               <p className="max-w-md text-base leading-7 text-zinc-600">Del viaje corto al centro al traslado de madrugada al aeropuerto: mismo número, mismo trato.</p>
             </div>
             <div className="grid gap-5 md:grid-cols-4">
-              {services.map((service) => (
-                <article key={service.title} className="border-2 border-zinc-950 bg-zinc-950 p-6 text-white shadow-[6px_6px_0_0_#fcd34d] transition hover:-translate-y-1 hover:shadow-[6px_11px_0_0_#fcd34d]">
+              {services.map((service, indice) => (
+                <article key={service.title} data-reveal style={{ '--retardo': indice + 1 }} className="border-2 border-zinc-950 bg-zinc-950 p-6 text-white shadow-[6px_6px_0_0_#fcd34d] transition hover:-translate-y-1 hover:shadow-[6px_11px_0_0_#fcd34d]">
                   <span aria-hidden="true" className="mb-6 grid h-11 w-11 place-items-center border-2 border-amber-300/50 text-amber-300">{service.icon}</span>
                   <h3 className="font-mono text-base font-bold uppercase tracking-[0.08em]">{service.title}</h3>
                   <p className="mt-3 text-sm leading-6 text-zinc-300">{service.desc}</p>
@@ -416,14 +439,19 @@ function App() {
         <section id="tarifas" className="relative isolate overflow-hidden bg-zinc-950 py-24 text-white">
           <div aria-hidden="true" className="plano-calles absolute inset-0 -z-10 opacity-50" />
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="mb-14 text-center">
+            <div data-reveal className="mb-14 text-center">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.26em] text-amber-300">Recibos del taxímetro</p>
               <h2 className="mt-3 text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Elige cómo moverte</h2>
             </div>
 
             <div className="grid gap-9 lg:grid-cols-3">
               {rideTypes.map((ride, indice) => (
-                <article key={ride.name} className="recibo flex flex-col border-2 border-zinc-950 bg-taxi-cream text-zinc-950 shadow-[10px_10px_0_0_#fcd34d]">
+                <article
+                  key={ride.name}
+                  data-reveal
+                  style={{ '--retardo': indice + 1 }}
+                  className="recibo flex flex-col border-2 border-zinc-950 bg-taxi-cream text-zinc-950 shadow-[10px_10px_0_0_#fcd34d] transition duration-300 hover:-translate-y-1.5 hover:shadow-[10px_16px_0_0_#fcd34d]"
+                >
                   <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-zinc-950 px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em]">
                     <span>Recibo No. 00{indice + 1}</span>
                     <span className="text-zinc-600">Unidad 012</span>
@@ -462,7 +490,13 @@ function App() {
               ))}
             </div>
 
-            <div className="mt-16 grid border-2 border-zinc-950 bg-taxi-cream text-zinc-950 shadow-[10px_10px_0_0_#fcd34d] lg:grid-cols-[.85fr_1.15fr]">
+            <div
+              ref={tramoRuta}
+              data-recorrido
+              data-reveal
+              style={{ '--retardo': 4 }}
+              className="mt-16 grid border-2 border-zinc-950 bg-taxi-cream text-zinc-950 shadow-[10px_10px_0_0_#fcd34d] lg:grid-cols-[.85fr_1.15fr]"
+            >
               <div className="border-b-2 border-dashed border-zinc-950 p-8 lg:border-b-0 lg:border-r-2 lg:p-10">
                 <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-amber-800">Tarifas referenciales</p>
                 <h3 className="mt-3 text-3xl font-black tracking-tight">Rutas frecuentes</h3>
@@ -478,24 +512,31 @@ function App() {
                   </button>
                 ))}
               </div>
+              <div className="border-t-2 border-dashed border-zinc-950 px-6 py-5 lg:col-span-2">
+                <div className="mb-3 flex items-center justify-between gap-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+                  <span>Recorrido de la ruta</span>
+                  <span className="text-amber-800">Centro · Aeropuerto</span>
+                </div>
+                <div className="recorrido" aria-hidden="true" />
+              </div>
             </div>
           </div>
         </section>
 
         <section id="conductores" className="bg-taxi-cream py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <div data-reveal className="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <p className="font-mono text-xs font-bold uppercase tracking-[0.26em] text-amber-800">Credenciales del equipo</p>
                 <h2 className="mt-3 text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Conductores que generan confianza</h2>
               </div>
-              <a href={wa('Hola, quiero trabajar como conductor en RutaFija Black.')} className="inline-flex w-fit border-2 border-zinc-950 px-6 py-3 font-mono text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition hover:bg-zinc-950 hover:text-amber-300">
+              <a href={wa('Hola, quiero trabajar como conductor en RutaFija Black.')} className="inline-flex w-fit border-2 border-zinc-950 px-6 py-3 font-mono text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition hover:-translate-y-0.5 hover:bg-zinc-950 hover:text-amber-300">
                 Unirme como conductor
               </a>
             </div>
             <div className="grid gap-7 md:grid-cols-3">
-              {drivers.map((driver) => (
-                <article key={driver.name} className="border-2 border-zinc-950 bg-white shadow-[8px_8px_0_0_#09090b]">
+              {drivers.map((driver, indice) => (
+                <article key={driver.name} data-reveal style={{ '--retardo': indice + 1 }} className="border-2 border-zinc-950 bg-white shadow-[8px_8px_0_0_#09090b] transition duration-300 hover:-translate-y-1.5 hover:shadow-[8px_14px_0_0_#09090b]">
                   <div className="flex items-center justify-between gap-3 bg-zinc-950 px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">
                     <span>Conductor verificado</span>
                     <span className="text-white/75">{driver.id}</span>
@@ -520,7 +561,7 @@ function App() {
 
         <section id="empresas" className="bg-zinc-950 px-5 py-24 text-white lg:px-8">
           <div className="mx-auto grid max-w-7xl border-2 border-amber-300/30 bg-[#0c0c0f] lg:grid-cols-[1fr_1fr]">
-            <div className="p-8 sm:p-12 lg:p-16">
+            <div data-reveal className="p-8 sm:p-12 lg:p-16">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.26em] text-amber-300">Soluciones corporativas</p>
               <h2 className="mt-4 max-w-2xl text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Rutas para equipos, hoteles, clínicas y comercios</h2>
               <p className="mt-6 max-w-xl text-lg leading-8 text-white/70">Contratos mensuales para empresas que necesitan traslados recurrentes, reporte de viajes, facturación y unidades con prioridad.</p>
@@ -530,7 +571,7 @@ function App() {
                 <span>✓ Tarifas por zona</span>
                 <span>✓ Atención prioritaria</span>
               </div>
-              <a href={wa('Hola, quiero una propuesta de traslados para mi empresa.')} className="mt-9 inline-flex border-2 border-amber-300 bg-amber-300 px-7 py-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition hover:bg-white hover:border-white">
+              <a href={wa('Hola, quiero una propuesta de traslados para mi empresa.')} className="mt-9 inline-flex border-2 border-amber-300 bg-amber-300 px-7 py-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition hover:-translate-y-0.5 hover:border-white hover:bg-white">
                 Solicitar propuesta
               </a>
             </div>
@@ -546,7 +587,7 @@ function App() {
       </main>
 
       <footer className="bg-taxi-cream">
-        <div aria-hidden="true" className="damero h-6 border-b-2 border-zinc-950" />
+        <div aria-hidden="true" className="damero damero-marquesina h-6 border-b-2 border-zinc-950" />
         <div className="grid gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr] lg:mx-auto lg:max-w-7xl lg:px-8">
           <div>
             <div className="flex items-center gap-3">
