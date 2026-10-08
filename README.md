@@ -6,7 +6,7 @@ Sitio web de demostración, de una sola página: servicio de taxi y transfer pre
 
 **Demo en vivo:** https://agencia-web-taxi-demo.vercel.app
 
-<a href="https://agencia-web-taxi-demo.vercel.app"><img src="docs/portada.jpg" alt="RutaFija en la computadora y en el teléfono: portada con cotizador de tarifa y viaje por WhatsApp" width="100%"></a>
+<a href="https://agencia-web-taxi-demo.vercel.app"><img src="docs/portada.jpg" alt="RutaFija Black: portada con taxímetro, cotizador rápido y tarifa clara antes de subir" width="100%"></a>
 
 > Es una plantilla de demostración de [Carlos Avila](https://github.com/AvilaCarlosDev): el negocio, los precios y las cifras son de ejemplo. Sirve como base para el sitio web de un negocio real.
 
