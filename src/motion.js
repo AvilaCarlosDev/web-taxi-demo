@@ -125,6 +125,29 @@ export function useBandaScroll(referencia) {
   }, [referencia])
 }
 
+export function useRutaMapa(referencia) {
+  useLayoutEffect(() => {
+    const tramo = referencia.current
+    if (!tramo) return undefined
+    if (!animacionDisponible()) {
+      tramo.classList.add('ruta-lista')
+      return undefined
+    }
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        entradas.forEach((entrada) => {
+          if (!entrada.isIntersecting) return
+          entrada.target.classList.add('ruta-lista')
+          observador.unobserve(entrada.target)
+        })
+      },
+      { threshold: 0.3 },
+    )
+    observador.observe(tramo)
+    return () => observador.disconnect()
+  }, [referencia])
+}
+
 export function useRecorrido(referencia) {
   useLayoutEffect(() => {
     const tramo = referencia.current

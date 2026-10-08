@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { MenuMovil, SaltarAlContenido, WhatsAppFlotante } from './sitio.jsx'
+import Ubicacion from './ubicacion.jsx'
 import { useSeccionActiva, wa } from './navegacion.js'
 import { formatearCuenta, quietudActiva, useBandaScroll, useContador, useParallax, useRecorrido, useRevelados } from './motion.js'
 
@@ -8,6 +9,7 @@ const enlaces = [
   ['tarifas', 'Tarifas'],
   ['conductores', 'Conductores'],
   ['empresas', 'Empresas'],
+  ['ubicacion', 'Ubicación'],
 ]
 
 const factor = { Moto: 0.6, Auto: 1, Confort: 1.6 }
@@ -541,7 +543,7 @@ function App() {
                     <span>Conductor verificado</span>
                     <span className="text-white/75">{driver.id}</span>
                   </div>
-                  <img src={driver.image} alt={`${driver.name}, conductor de RutaFija`} className="h-72 w-full object-cover" />
+                  <img src={driver.image} alt={`${driver.name}, conductor de RutaFija`} className="aspect-[4/5] w-full object-cover object-top" />
                   <div className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -584,6 +586,8 @@ function App() {
             </div>
           </div>
         </section>
+
+        <Ubicacion />
       </main>
 
       <footer className="bg-taxi-cream">
@@ -611,7 +615,7 @@ function App() {
           <div>
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.18em]">Contacto</h3>
             <ul className="mt-5 space-y-3 text-sm font-semibold text-zinc-600">
-              <li>Punto Fijo, Falcón</li>
+              <li><a href="#ubicacion" className="hover:text-zinc-950">Punto Fijo, Falcón</a></li>
               <li><a href={wa()} className="hover:text-zinc-950">WhatsApp: +58 412-000-0000</a></li>
               <li>Atención 24/7</li>
             </ul>

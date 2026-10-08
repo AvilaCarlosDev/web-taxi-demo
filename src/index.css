@@ -203,6 +203,35 @@ p {
   transform: rotate(45deg);
 }
 
+.mapa-ruta path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+
+.mapa-ruta.ruta-lista path {
+  animation: rutaMapa 1.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes rutaMapa {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.mapa-pin {
+  animation: pinMapa 1.8s ease-in-out infinite;
+}
+
+@keyframes pinMapa {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -218,6 +247,15 @@ p {
 
   .damero-marquesina,
   .taxi-luz {
+    animation: none !important;
+  }
+
+  .mapa-ruta path {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+
+  .mapa-pin {
     animation: none !important;
   }
 
