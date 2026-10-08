@@ -128,6 +128,81 @@ p {
   bottom: -13px;
 }
 
+.motion-on [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+}
+
+.motion-on [data-reveal].revealed {
+  animation: revelar 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--retardo, 0) * 85ms);
+}
+
+@keyframes revelar {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lcd-parpadeo {
+  animation: lcdParpadeo 620ms ease-out both;
+}
+
+@keyframes lcdParpadeo {
+  0% {
+    opacity: 0.2;
+  }
+  20% {
+    opacity: 1;
+  }
+  34% {
+    opacity: 0.35;
+  }
+  52% {
+    opacity: 1;
+  }
+  66% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+[data-recorrido] {
+  --progreso: 1;
+}
+
+.recorrido {
+  position: relative;
+  height: 14px;
+  border-top: 2px solid #09090b;
+  border-bottom: 2px solid #09090b;
+  background-image: repeating-linear-gradient(90deg, #d4d4d8 0 6px, transparent 6px 15px);
+}
+
+.recorrido::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--progreso) * 100%);
+  background: #fcd34d;
+  border-right: 2px solid #09090b;
+}
+
+.recorrido::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--progreso) * 100%);
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: #09090b;
+  transform: rotate(45deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -135,12 +210,26 @@ p {
 
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
   }
 
   .damero-marquesina,
   .taxi-luz {
     animation: none !important;
+  }
+
+  .motion-on [data-reveal],
+  .lcd-parpadeo {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  [data-recorrido],
+  .recorrido {
+    --progreso: 1 !important;
   }
 }
