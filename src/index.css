@@ -3,9 +3,11 @@
 @theme {
   --font-display: "Space Grotesk", Inter, ui-sans-serif, system-ui, sans-serif;
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --color-taxi-ink: #09090b;
   --color-taxi-gold: #fcd34d;
   --color-taxi-cream: #f6f1e7;
+  --color-taxi-lcd: #0a0c07;
 }
 
 * {
@@ -32,7 +34,6 @@ img {
   color: #09090b;
 }
 
-/* Base de sitio web: la cabecera fija no tapa el título de la sección al saltar desde el menú. */
 section[id], main[id] {
   scroll-margin-top: 6rem;
 }
@@ -56,6 +57,77 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+.damero {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #09090b 25%, transparent 25%, transparent 75%, #09090b 75%),
+    linear-gradient(45deg, #09090b 25%, transparent 25%, transparent 75%, #09090b 75%);
+  background-size: 48px 48px;
+  background-position: 0 0, 24px 24px;
+}
+
+.damero-marquesina {
+  animation: dameroScroll 7s linear infinite;
+}
+
+@keyframes dameroScroll {
+  to {
+    background-position: 96px 0, 120px 24px;
+  }
+}
+
+.plano-calles {
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 139px, rgba(255, 255, 255, 0.07) 139px 141px),
+    repeating-linear-gradient(0deg, transparent 0 139px, rgba(255, 255, 255, 0.07) 139px 141px),
+    repeating-linear-gradient(90deg, transparent 0 479px, rgba(252, 211, 77, 0.12) 479px 483px);
+}
+
+.taxi-luz {
+  filter: drop-shadow(0 0 16px rgba(252, 211, 77, 0.5));
+  animation: filamento 5s ease-in-out infinite;
+}
+
+@keyframes filamento {
+  0%, 44%, 100% {
+    opacity: 1;
+  }
+  48% {
+    opacity: 0.7;
+  }
+  52% {
+    opacity: 0.92;
+  }
+}
+
+.lcd {
+  text-shadow: 0 0 12px rgba(252, 211, 77, 0.45);
+}
+
+.recibo {
+  position: relative;
+}
+
+.recibo::before,
+.recibo::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #09090b;
+  transform: translateX(-50%);
+}
+
+.recibo::before {
+  top: -13px;
+}
+
+.recibo::after {
+  bottom: -13px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -64,5 +136,11 @@ p {
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .damero-marquesina,
+  .taxi-luz {
+    animation: none !important;
   }
 }
